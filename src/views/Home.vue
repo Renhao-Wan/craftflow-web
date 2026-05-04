@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
-import { getTaskStatus } from '@/api/tasks'
 import TaskStatusBadge from '@/components/common/TaskStatusBadge.vue'
 import { inferTaskType, formatTime, taskRouteName } from '@/utils/taskHelpers'
 import type { TaskStatus } from '@/api/types/task'
@@ -24,7 +23,7 @@ async function loadRecent(): Promise<void> {
   if (ids.length === 0) return
 
   const results = await Promise.allSettled(
-    ids.map((id: string) => getTaskStatus(id)),
+    ids.map((id: string) => taskStore.fetchTaskStatus(id)),
   )
   recentTasks.value = results
     .map((result, i) => {

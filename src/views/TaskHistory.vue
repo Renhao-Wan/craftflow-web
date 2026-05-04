@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
-import { getTaskStatus } from '@/api/tasks'
 import TaskStatusBadge from '@/components/common/TaskStatusBadge.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import ErrorAlert from '@/components/common/ErrorAlert.vue'
@@ -31,7 +30,7 @@ async function loadHistory(): Promise<void> {
   error.value = null
   try {
     const results = await Promise.allSettled(
-      ids.map((id: string) => getTaskStatus(id)),
+      ids.map((id: string) => taskStore.fetchTaskStatus(id)),
     )
     items.value = results
       .map((result, i) => {

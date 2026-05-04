@@ -15,7 +15,7 @@ const props = defineProps<{ taskId: string }>()
 
 const router = useRouter()
 const taskStore = useTaskStore()
-const { resumeTask, loadTask, submitting, submitError, isPolling } = useTaskLifecycle()
+const { resumeTask, loadTask, submitting, submitError } = useTaskLifecycle()
 
 const copied = ref(false)
 
@@ -79,7 +79,6 @@ onMounted(() => {
       <button class="back-btn" @click="onBack">&larr; 返回</button>
       <div class="topbar-meta">
         <TaskStatusBadge v-if="task" :status="task.status" />
-        <span v-if="isPolling" class="polling-dot" title="轮询中" />
       </div>
     </div>
 
@@ -212,19 +211,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.polling-dot {
-  width: 8px;
-  height: 8px;
-  background: #2563eb;
-  border-radius: 50%;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
 }
 
 /* 通用状态 */

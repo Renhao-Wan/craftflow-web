@@ -1,20 +1,45 @@
-import { ref } from 'vue'
+/**
+ * 任务生命周期 Composable（WebSocket 驱动）
+ *
+ * 封装 任务提交 → WS 推送 → 中断 → 恢复 的完整流程。
+ * 组件只需调用 submit/resume 方法，其余逻辑由 composable 管理。
+ *
+ * 替代原轮询方案：服务端通过 WebSocket 主动推送状态变更。
+ */
+
+import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
-import { usePolling } from './usePolling'
-import { createTask } from '@/api/creation'
-import { createPolishingTask } from '@/api/polishing'
-import { resumeTask as resumeTaskApi } from '@/api/creation'
-import { getTaskStatus } from '@/api/tasks'
-import type { TaskStatusResponse } from '@/api/types/task'
+import { wsClient, type WsMessage } from '@/api/wsClient'
+import type { TaskStatus } from '@/api/types/task'
 import type { ResumeAction } from '@/api/types/resume'
 import type { PolishingMode } from '@/api/types/polishing'
 
-/** 轮询间隔（毫秒） */
-const POLL_INTERVAL = 3_000
-
 /** 任务类型 */
 export type TaskType = 'creation' | 'polishing'
+
+/** 全局 WS 监听器是否已注册 */
+let globalListenersRegistered = false
+
+/** 注册全局 WS 任务状态监听器（仅执行一次） */
+function ensureGlobalListeners(): void {
+  if (globalListenersRegistered) return
+  globalListenersRegistered = true
+
+  const taskStore = useTaskStore()
+
+  wsClient.on('task_update', (msg: WsMessage) => {
+    taskStore.handleTaskUpdate(msg)
+  })
+
+  wsClient.on('task_result', (msg: WsMessage) => {
+    taskStore.handleTaskResult(msg)
+  })
+
+  wsClient.on('task_error', (msg: WsMessage) => {
+    taskStore.handleTaskError(msg)
+  })
+}
 
 /** 生命周期 Composable 返回值 */
 export interface UseTaskLifecycleReturn {
@@ -24,18 +49,14 @@ export interface UseTaskLifecycleReturn {
   submitPolishing: (content: string, mode: PolishingMode) => Promise<void>
   /** HITL 恢复执行 */
   resumeTask: (taskId: string, action: ResumeAction, data?: Record<string, unknown>) => Promise<void>
-  /** 加载指定任务状态并开始轮询 */
+  /** 加载指定任务状态 */
   loadTask: (taskId: string) => Promise<void>
-  /** 停止轮询 */
+  /** 取消订阅当前任务的 WS 推送 */
   stop: () => void
   /** 是否正在提交 */
   submitting: ReturnType<typeof ref<boolean>>
   /** 提交错误 */
   submitError: ReturnType<typeof ref<string | null>>
-  /** 是否正在轮询 */
-  isPolling: ReturnType<typeof ref<boolean>>
-  /** 轮询错误 */
-  pollError: ReturnType<typeof ref<Error | null>>
   /** 当前任务类型 */
   taskType: ReturnType<typeof ref<TaskType | null>>
 }
@@ -43,17 +64,14 @@ export interface UseTaskLifecycleReturn {
 /**
  * 任务生命周期 Composable
  *
- * 封装 任务提交 → 轮询 → 中断 → 恢复 的完整流程。
- * 组件只需调用 submit/resume 方法，其余逻辑由 composable 管理。
- *
  * @example
  * ```vue
  * <script setup lang="ts">
- * const { submitCreation, isPolling } = useTaskLifecycle()
+ * const { submitCreation, submitting } = useTaskLifecycle()
  *
  * async function onSubmit() {
  *   await submitCreation('主题', '描述')
- *   // 自动跳转到详情页并开始轮询
+ *   // 自动跳转到详情页，WS 推送驱动后续状态更新
  * }
  * </script>
  * ```
@@ -66,40 +84,23 @@ export function useTaskLifecycle(): UseTaskLifecycleReturn {
   const submitError = ref<string | null>(null)
   const taskType = ref<TaskType | null>(null)
 
-  // 创建轮询实例
-  const { start, stop, isActive: isPolling, error: pollError } = usePolling<TaskStatusResponse>({
-    pollFn: async () => {
-      const taskId = taskStore.currentTask?.task_id
-      if (!taskId) throw new Error('无活跃任务')
-      return getTaskStatus(taskId)
-    },
-    interval: POLL_INTERVAL,
-    shouldStop: (result) => result.status === 'completed' || result.status === 'failed',
-    onResult: (result) => {
-      taskStore.setCurrentTask(result)
-    },
-    onError: (err) => {
-      console.error('[useTaskLifecycle] 轮询失败:', err.message)
-    },
-  })
+  // 确保全局 WS 监听器已注册
+  ensureGlobalListeners()
 
-  /** 提交任务后跳转并开始轮询 */
+  /** 订阅任务的 WS 推送 */
+  function subscribeTask(taskId: string): void {
+    wsClient.send({ type: 'subscribe_task', taskId })
+  }
+
+  /** 提交任务后跳转 */
   async function handleSubmit(taskId: string, type: TaskType): Promise<void> {
     taskType.value = type
+    subscribeTask(taskId)
 
-    // 先查询一次任务状态
-    const status = await taskStore.fetchTaskStatus(taskId)
-
-    // 跳转到详情页
     if (type === 'creation') {
       await router.push({ name: 'task-detail', params: { taskId } })
     } else {
       await router.push({ name: 'polishing-result', params: { taskId } })
-    }
-
-    // 如果任务未结束，开始轮询
-    if (status.status === 'running' || status.status === 'interrupted') {
-      start()
     }
   }
 
@@ -108,13 +109,21 @@ export function useTaskLifecycle(): UseTaskLifecycleReturn {
     submitting.value = true
     submitError.value = null
     try {
-      const response = await createTask({ topic, description })
-      taskStore.setCurrentTask({
-        task_id: response.task_id,
-        status: response.status,
-        created_at: response.created_at,
+      const response = await wsClient.sendAndWait('create_creation', {
+        topic,
+        description,
       })
-      await handleSubmit(response.task_id, 'creation')
+
+      const taskId = response.taskId as string
+      const status = (response.status as TaskStatus) ?? 'running'
+
+      taskStore.setCurrentTask({
+        task_id: taskId,
+        status,
+        created_at: response.createdAt as string | undefined,
+      })
+
+      await handleSubmit(taskId, 'creation')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '提交创作任务失败'
       submitError.value = message
@@ -129,13 +138,21 @@ export function useTaskLifecycle(): UseTaskLifecycleReturn {
     submitting.value = true
     submitError.value = null
     try {
-      const response = await createPolishingTask({ content, mode })
-      taskStore.setCurrentTask({
-        task_id: response.task_id,
-        status: response.status,
-        created_at: response.created_at,
+      const response = await wsClient.sendAndWait('create_polishing', {
+        content,
+        mode,
       })
-      await handleSubmit(response.task_id, 'polishing')
+
+      const taskId = response.taskId as string
+      const status = (response.status as TaskStatus) ?? 'running'
+
+      taskStore.setCurrentTask({
+        task_id: taskId,
+        status,
+        created_at: response.createdAt as string | undefined,
+      })
+
+      await handleSubmit(taskId, 'polishing')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '提交润色任务失败'
       submitError.value = message
@@ -154,15 +171,20 @@ export function useTaskLifecycle(): UseTaskLifecycleReturn {
     submitting.value = true
     submitError.value = null
     try {
-      stop() // 先停止当前轮询
-      const response = await resumeTaskApi(taskId, { action, data })
-      taskStore.setCurrentTask({
-        task_id: response.task_id,
-        status: response.status,
-        created_at: response.created_at,
+      const response = await wsClient.sendAndWait('resume_task', {
+        taskId,
+        action,
+        data,
       })
-      // 恢复后重新开始轮询
-      start()
+
+      const responseTaskId = (response.taskId as string) ?? taskId
+      const status = (response.status as TaskStatus) ?? 'running'
+
+      taskStore.setCurrentTask({
+        task_id: responseTaskId,
+        status,
+        created_at: response.createdAt as string | undefined,
+      })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '恢复任务失败'
       submitError.value = message
@@ -172,13 +194,24 @@ export function useTaskLifecycle(): UseTaskLifecycleReturn {
     }
   }
 
-  /** 加载指定任务状态并开始轮询 */
+  /** 加载指定任务状态 */
   async function loadTask(taskId: string): Promise<void> {
-    const status = await taskStore.fetchTaskStatus(taskId)
-    if (status.status === 'running' || status.status === 'interrupted') {
-      start()
+    subscribeTask(taskId)
+    await taskStore.fetchTaskStatus(taskId)
+  }
+
+  /** 取消订阅当前任务 */
+  function stop(): void {
+    const taskId = taskStore.currentTask?.task_id
+    if (taskId) {
+      wsClient.send({ type: 'unsubscribe_task', taskId })
     }
   }
+
+  // 组件卸载时取消订阅
+  onUnmounted(() => {
+    stop()
+  })
 
   return {
     submitCreation,
@@ -188,8 +221,6 @@ export function useTaskLifecycle(): UseTaskLifecycleReturn {
     stop,
     submitting,
     submitError,
-    isPolling,
-    pollError,
     taskType,
   }
 }

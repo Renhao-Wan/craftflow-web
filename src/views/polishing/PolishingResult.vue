@@ -15,7 +15,7 @@ const props = defineProps<{ taskId: string }>()
 
 const router = useRouter()
 const taskStore = useTaskStore()
-const { loadTask, isPolling } = useTaskLifecycle()
+const { loadTask } = useTaskLifecycle()
 
 const copied = ref(false)
 const viewMode = ref<'result' | 'compare'>('result')
@@ -84,7 +84,6 @@ onMounted(() => {
       <div class="topbar-meta">
         <span v-if="modeLabel" class="mode-tag">{{ modeLabel }}</span>
         <TaskStatusBadge v-if="task" :status="task.status" />
-        <span v-if="isPolling" class="polling-dot" title="轮询中" />
       </div>
     </div>
 
@@ -232,19 +231,6 @@ onMounted(() => {
   color: #4338ca;
   background: #e0e7ff;
   border-radius: 9999px;
-}
-
-.polling-dot {
-  width: 8px;
-  height: 8px;
-  background: #2563eb;
-  border-radius: 50%;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
 }
 
 /* 通用 */
