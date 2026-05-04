@@ -310,4 +310,21 @@ onMounted(loadHistory)
   color: #b91c1c;
   background: #fef2f2;
 }
+
+@media (max-width: 640px) {
+  .history-page {
+    padding: 24px 16px;
+  }
+
+  .history-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .item-side {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
 </style>

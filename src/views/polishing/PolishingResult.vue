@@ -21,6 +21,9 @@ const copied = ref(false)
 const viewMode = ref<'result' | 'compare'>('result')
 
 const task = computed(() => taskStore.currentTask)
+const isNotFound = computed(
+  () => taskStore.error?.includes('404') ?? false,
+)
 const status = computed(() => task.value?.status)
 const progress = computed(() => task.value?.progress ?? 0)
 const currentNode = computed(() => task.value?.current_node ?? '')
@@ -92,11 +95,21 @@ onMounted(() => {
 
     <!-- 错误 -->
     <ErrorAlert
-      v-else-if="taskStore.error && !task"
+      v-else-if="taskStore.error && !task && !isNotFound"
       :message="taskStore.error"
       :retryable="true"
       @retry="onRetry"
     />
+
+    <!-- 任务不存在 -->
+    <div v-else-if="isNotFound" class="state-center">
+      <div class="not-found-hint">
+        <p>任务不存在或已过期</p>
+        <button class="link-btn" @click="router.push({ name: 'history' })">
+          查看历史记录
+        </button>
+      </div>
+    </div>
 
     <!-- 任务内容 -->
     <template v-else-if="task">
@@ -389,9 +402,47 @@ onMounted(() => {
   border-radius: 12px;
 }
 
+/* not found hint */
+.not-found-hint {
+  text-align: center;
+  color: #6b7280;
+}
+
+.not-found-hint p {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.link-btn {
+  font-size: 14px;
+  color: #2563eb;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 640px) {
+  .polishing-result-page {
+    padding: 16px;
+  }
+
   .compare-view {
     grid-template-columns: 1fr;
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .state-running {
+    padding: 20px;
   }
 }
 </style>

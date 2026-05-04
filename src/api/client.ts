@@ -1,5 +1,6 @@
 import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import { ApiError, type ErrorResponse } from './types/errors'
+import { useToast } from '@/composables/useToast'
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
@@ -21,6 +22,28 @@ client.interceptors.response.use(
       const status = error.response?.status ?? 0
       const data = error.response?.data as ErrorResponse | undefined
       const message = data?.message ?? error.message ?? '请求失败'
+
+      const toast = useToast()
+
+      if (!error.response) {
+        toast.error('网络连接失败，请检查网络后重试', 6000)
+        throw new ApiError('网络连接失败', 0, data)
+      }
+
+      switch (status) {
+        case 401:
+          toast.warning('登录已过期，请重新登录')
+          break
+        case 403:
+          toast.error('没有权限执行此操作')
+          break
+        case 500:
+        case 502:
+        case 503:
+          toast.error('服务器暂时不可用，请稍后重试')
+          break
+      }
+
       throw new ApiError(message, status, data)
     }
     throw error

@@ -302,4 +302,32 @@ onMounted(loadRecent)
   font-size: 12px;
   color: #9ca3af;
 }
+
+@media (max-width: 640px) {
+  .home-page {
+    padding: 32px 16px 24px;
+  }
+
+  .hero-title {
+    font-size: 28px;
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+  }
+
+  .action-card {
+    padding: 16px;
+  }
+
+  .recent-item {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .recent-id {
+    order: 3;
+    width: 100%;
+  }
+}
 </style>
