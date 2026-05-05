@@ -25,7 +25,7 @@ const isNotFound = computed(
 )
 const status = computed(() => task.value?.status)
 const progress = computed(() => task.value?.progress ?? 0)
-const currentNode = computed(() => task.value?.current_node ?? '')
+const currentNode = computed(() => task.value?.current_node_label ?? task.value?.current_node ?? '')
 const result = computed(() => task.value?.result ?? '')
 const error = computed(() => task.value?.error ?? '未知错误')
 

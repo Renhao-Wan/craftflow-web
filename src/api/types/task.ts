@@ -14,6 +14,8 @@ export interface TaskStatusResponse {
   task_id: string
   status: TaskStatus
   current_node?: string
+  /** 当前节点的中文展示标签 */
+  current_node_label?: string
   /** 等待的人工操作类型（仅 interrupted 状态） */
   awaiting?: string
   /** 当前状态数据（如大纲） */
