@@ -86,9 +86,28 @@ export const useTaskStore = defineStore('task', () => {
     const taskId = message.taskId as string
     if (!taskId || !currentTask.value || currentTask.value.task_id !== taskId) return
 
+    const newStatus = (message.status as TaskStatus) ?? currentTask.value.status
+
+    // 如果 task_update 携带 completed 状态但没有 result，暂不更新 status
+    // 等待 task_result 消息携带完整结果后再更新，避免闪烁
+    if (newStatus === 'completed' && !message.result && !currentTask.value.result) {
+      // 只更新非 status 字段
+      currentTask.value = {
+        ...currentTask.value,
+        current_node: (message.currentNode as string) ?? currentTask.value.current_node,
+        current_node_label: (message.currentNodeLabel as string) ?? currentTask.value.current_node_label,
+        awaiting: (message.awaiting as string) ?? undefined,
+        data: (message.data as Record<string, unknown>) ?? currentTask.value.data,
+        error: (message.error as string) ?? currentTask.value.error,
+        progress: (message.progress as number) ?? currentTask.value.progress,
+        updated_at: new Date().toISOString(),
+      }
+      return
+    }
+
     currentTask.value = {
       ...currentTask.value,
-      status: (message.status as TaskStatus) ?? currentTask.value.status,
+      status: newStatus,
       current_node: (message.currentNode as string) ?? currentTask.value.current_node,
       current_node_label: (message.currentNodeLabel as string) ?? currentTask.value.current_node_label,
       awaiting: (message.awaiting as string) ?? undefined,
@@ -105,6 +124,7 @@ export const useTaskStore = defineStore('task', () => {
     if (!taskId) return
 
     const result = (message.result as string) ?? ''
+    const now = new Date().toISOString()
 
     if (currentTask.value && currentTask.value.task_id === taskId) {
       currentTask.value = {
@@ -112,8 +132,20 @@ export const useTaskStore = defineStore('task', () => {
         status: 'completed',
         result,
         progress: 100,
-        updated_at: (message.updatedAt as string) ?? new Date().toISOString(),
+        updated_at: (message.updatedAt as string) ?? now,
       }
+    } else {
+      // task_result 可能先于 task_update 到达（currentTask 为 null）
+      // 或 currentTask 存在但 task_id 不匹配（切换了任务）
+      currentTask.value = {
+        task_id: taskId,
+        status: 'completed',
+        result,
+        progress: 100,
+        created_at: (message.createdAt as string) ?? now,
+        updated_at: (message.updatedAt as string) ?? now,
+      }
+      taskHistory.value = appendToHistory(taskHistory.value, taskId)
     }
   }
 
@@ -123,6 +155,7 @@ export const useTaskStore = defineStore('task', () => {
     if (!taskId) return
 
     const errorMsg = (message.error as string) ?? '未知错误'
+    const now = new Date().toISOString()
 
     if (currentTask.value && currentTask.value.task_id === taskId) {
       currentTask.value = {
@@ -130,8 +163,18 @@ export const useTaskStore = defineStore('task', () => {
         status: 'failed',
         error: errorMsg,
         progress: 0,
-        updated_at: new Date().toISOString(),
+        updated_at: now,
       }
+    } else {
+      currentTask.value = {
+        task_id: taskId,
+        status: 'failed',
+        error: errorMsg,
+        progress: 0,
+        created_at: now,
+        updated_at: now,
+      }
+      taskHistory.value = appendToHistory(taskHistory.value, taskId)
     }
   }
 

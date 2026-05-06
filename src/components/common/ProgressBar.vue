@@ -26,7 +26,7 @@ import { computed } from 'vue'
         :style="{ width: `${clampedPercentage}%` }"
       />
     </div>
-    <span v-if="showText" class="progress-text">{{ clampedPercentage }}%</span>
+    <span v-if="showText" class="progress-text">{{ Math.round(clampedPercentage) }}%</span>
   </div>
 </template>
 

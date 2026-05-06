@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, onUnmounted, computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
 import { useTaskLifecycle } from '@/composables/useTaskLifecycle'
@@ -15,7 +15,7 @@ const props = defineProps<{ taskId: string }>()
 
 const router = useRouter()
 const taskStore = useTaskStore()
-const { resumeTask, loadTask, submitting, submitError } = useTaskLifecycle()
+const { resumeTask, loadTask, stop, submitting, submitError } = useTaskLifecycle()
 
 const copied = ref(false)
 
@@ -69,6 +69,23 @@ onMounted(() => {
   if (!task.value || task.value.task_id !== props.taskId) {
     loadTask(props.taskId)
   }
+})
+
+// 兜底：任务已完成但 result 为空时，自动重新获取状态
+// 可能原因：WS task_result 消息丢失或未到达
+let fetchedOnce = false
+watch(
+  () => ({ status: status.value, result: result.value }),
+  (val) => {
+    if (val.status === 'completed' && !val.result && !fetchedOnce) {
+      fetchedOnce = true
+      loadTask(props.taskId)
+    }
+  },
+)
+
+onUnmounted(() => {
+  stop()
 })
 </script>
 

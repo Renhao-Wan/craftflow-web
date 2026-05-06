@@ -208,10 +208,10 @@ export function useTaskLifecycle(): UseTaskLifecycleReturn {
     }
   }
 
-  // 组件卸载时取消订阅
-  onUnmounted(() => {
-    stop()
-  })
+  // 不在 onUnmounted 中自动取消订阅。
+  // 原因：提交任务后 router.push 会触发当前组件卸载，但新组件会立即
+  // 挂载并接管订阅。如果在卸载时取消订阅，会丢失中间的进度推送。
+  // 组件应在适当时机显式调用 stop()（如用户主动离开任务页）。
 
   return {
     submitCreation,

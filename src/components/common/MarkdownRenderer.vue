@@ -1,11 +1,21 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+import { marked } from 'marked'
+
+const props = defineProps<{
+  /** 原始 Markdown 文本 */
   content: string
 }>()
+
+/** 将 Markdown 转换为 HTML */
+const html = computed(() => {
+  if (!props.content) return ''
+  return marked.parse(props.content, { async: false }) as string
+})
 </script>
 
 <template>
-  <div class="markdown-body" v-html="content" />
+  <div class="markdown-body" v-html="html" />
 </template>
 
 <style scoped>

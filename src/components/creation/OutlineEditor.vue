@@ -33,6 +33,7 @@ const editingIndex = ref(-1)
 const editBuffer = ref<OutlineItem>({ title: '', summary: '' })
 
 const hasChanges = computed(() => {
+  if (editableItems.value.length !== props.items.length) return true
   return editableItems.value.some(
     (item, i) =>
       item.title !== props.items[i]?.title ||
@@ -54,6 +55,16 @@ function saveEdit(): void {
   if (idx < 0) return
   editableItems.value[idx] = { ...editBuffer.value }
   editingIndex.value = -1
+}
+
+function deleteItem(index: number): void {
+  editableItems.value.splice(index, 1)
+  // 如果正在编辑的条目被删除或在其前面，重置编辑状态
+  if (editingIndex.value === index) {
+    editingIndex.value = -1
+  } else if (editingIndex.value > index) {
+    editingIndex.value--
+  }
 }
 
 function onConfirm(): void {
@@ -89,7 +100,16 @@ function onUpdate(): void {
             <p class="item-title">{{ item.title }}</p>
             <p class="item-summary">{{ item.summary }}</p>
           </div>
-          <span class="edit-icon" title="编辑">&#9998;</span>
+          <div class="item-actions">
+            <span class="edit-icon" title="编辑">&#9998;</span>
+            <button
+              class="btn-icon btn-delete"
+              title="删除"
+              @click.stop="deleteItem(index)"
+            >
+              &#10005;
+            </button>
+          </div>
         </div>
 
         <!-- 编辑模式 -->
@@ -230,17 +250,23 @@ function onUpdate(): void {
   line-height: 1.5;
 }
 
-.edit-icon {
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
-  font-size: 16px;
-  color: #9ca3af;
   opacity: 0;
   transition: opacity 0.15s;
-  padding-top: 4px;
 }
 
-.item-view:hover .edit-icon {
+.item-view:hover .item-actions {
   opacity: 1;
+}
+
+.edit-icon {
+  font-size: 16px;
+  color: #9ca3af;
+  padding-top: 2px;
 }
 
 /* 编辑模式 */
@@ -320,6 +346,16 @@ function onUpdate(): void {
 }
 
 .btn-cancel:hover {
+  background: #fef2f2;
+}
+
+.btn-delete {
+  color: #b91c1c;
+  border-color: #fecaca;
+  opacity: 1;
+}
+
+.btn-delete:hover {
   background: #fef2f2;
 }
 
