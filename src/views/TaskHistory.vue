@@ -10,6 +10,7 @@ import type { TaskStatus } from '@/api/types/task'
 
 interface HistoryItem {
   taskId: string
+  topic: string
   status: TaskStatus
   createdAt: string
   type: 'creation' | 'polishing'
@@ -23,29 +24,20 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 async function loadHistory(): Promise<void> {
-  const ids = taskStore.taskHistory
-  if (ids.length === 0) return
-
   loading.value = true
   error.value = null
   try {
-    const results = await Promise.allSettled(
-      ids.map((id: string) => taskStore.fetchTaskStatus(id)),
-    )
-    items.value = results
-      .map((result, i) => {
-        if (result.status === 'fulfilled') {
-          const d = result.value
-          return {
-            taskId: ids[i]!,
-            status: d.status,
-            createdAt: d.created_at ?? '',
-            type: inferTaskType(d),
-          }
-        }
-        return null
-      })
-      .filter((item): item is HistoryItem => item !== null)
+    await taskStore.fetchTaskList()
+    items.value = taskStore.taskList.map((t) => {
+      const type = inferTaskType(t)
+      return {
+        taskId: t.task_id,
+        topic: t.topic ?? (type === 'polishing' ? '润色任务' : '创作任务'),
+        status: t.status,
+        createdAt: t.created_at ?? '',
+        type,
+      }
+    })
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : '加载历史记录失败'
   } finally {
@@ -57,13 +49,15 @@ function goToDetail(item: HistoryItem): void {
   router.push({ name: taskRouteName(item.type), params: { taskId: item.taskId } })
 }
 
-function onRemove(taskId: string): void {
-  taskStore.removeFromHistory(taskId)
+async function onRemove(taskId: string): Promise<void> {
+  await taskStore.deleteTask(taskId)
   items.value = items.value.filter((item) => item.taskId !== taskId)
 }
 
-function onClearAll(): void {
-  taskStore.clearHistory()
+async function onClearAll(): Promise<void> {
+  for (const item of items.value) {
+    await taskStore.deleteTask(item.taskId)
+  }
   items.value = []
 }
 
@@ -119,7 +113,7 @@ onMounted(loadHistory)
             </span>
             <TaskStatusBadge :status="item.status" />
           </div>
-          <p class="item-id">{{ item.taskId }}</p>
+          <p class="item-topic">{{ item.topic }}</p>
         </div>
         <div class="item-side">
           <span class="item-time">{{ formatTime(item.createdAt) }}</span>
@@ -268,9 +262,8 @@ onMounted(loadHistory)
   background: #ede9fe;
 }
 
-.item-id {
+.item-topic {
   font-size: 13px;
-  font-family: ui-monospace, monospace;
   color: #6b7280;
   margin: 0;
   overflow: hidden;

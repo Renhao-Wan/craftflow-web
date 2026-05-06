@@ -1,7 +1,8 @@
 import type { TaskStatusResponse } from '@/api/types/task'
 
-/** 根据任务数据推断类型 */
+/** 根据任务数据推断类型（优先使用 graph_type，回退到 data.mode） */
 export function inferTaskType(data: TaskStatusResponse): 'creation' | 'polishing' {
+  if (data.graph_type) return data.graph_type
   if (data.data && typeof data.data.mode === 'number') return 'polishing'
   return 'creation'
 }

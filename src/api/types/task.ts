@@ -13,6 +13,10 @@ export interface TaskResponse {
 export interface TaskStatusResponse {
   task_id: string
   status: TaskStatus
+  /** 任务类型（REST API 返回） */
+  graph_type?: 'creation' | 'polishing'
+  /** 创作主题（仅 creation 任务） */
+  topic?: string
   current_node?: string
   /** 当前节点的中文展示标签 */
   current_node_label?: string

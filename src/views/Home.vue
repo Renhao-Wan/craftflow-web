@@ -8,6 +8,7 @@ import type { TaskStatus } from '@/api/types/task'
 
 interface RecentTask {
   taskId: string
+  topic: string
   status: TaskStatus
   type: 'creation' | 'polishing'
   createdAt: string
@@ -19,26 +20,17 @@ const taskStore = useTaskStore()
 const recentTasks = ref<RecentTask[]>([])
 
 async function loadRecent(): Promise<void> {
-  const ids = taskStore.taskHistory.slice(0, 5)
-  if (ids.length === 0) return
-
-  const results = await Promise.allSettled(
-    ids.map((id: string) => taskStore.fetchTaskStatus(id)),
-  )
-  recentTasks.value = results
-    .map((result, i) => {
-      if (result.status === 'fulfilled') {
-        const d = result.value
-        return {
-          taskId: ids[i]!,
-          status: d.status,
-          type: inferTaskType(d),
-          createdAt: d.created_at ?? '',
-        }
-      }
-      return null
-    })
-    .filter((item): item is RecentTask => item !== null)
+  await taskStore.fetchTaskList()
+  recentTasks.value = taskStore.taskList.slice(0, 5).map((t: import('@/api/types/task').TaskStatusResponse) => {
+    const type = inferTaskType(t)
+    return {
+      taskId: t.task_id,
+      topic: t.topic ?? (type === 'polishing' ? '润色任务' : '创作任务'),
+      status: t.status,
+      type,
+      createdAt: t.created_at ?? '',
+    }
+  })
 }
 
 function goToTask(item: RecentTask): void {
@@ -97,7 +89,7 @@ onMounted(loadRecent)
           <span class="type-tag" :class="'type-' + item.type">
             {{ item.type === 'creation' ? '创作' : '润色' }}
           </span>
-          <span class="recent-id">{{ item.taskId }}</span>
+          <span class="recent-topic">{{ item.topic }}</span>
           <TaskStatusBadge :status="item.status" />
           <span class="recent-time">{{ formatTime(item.createdAt) }}</span>
         </li>
@@ -285,11 +277,10 @@ onMounted(loadRecent)
   background: #ede9fe;
 }
 
-.recent-id {
+.recent-topic {
   flex: 1;
   min-width: 0;
   font-size: 13px;
-  font-family: ui-monospace, monospace;
   color: #6b7280;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -324,7 +315,7 @@ onMounted(loadRecent)
     gap: 6px;
   }
 
-  .recent-id {
+  .recent-topic {
     order: 3;
     width: 100%;
   }

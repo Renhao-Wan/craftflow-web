@@ -1,43 +1,13 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { wsClient, type WsMessage } from '@/api/wsClient'
+import { getTaskList as apiGetTaskList, deleteTask as apiDeleteTask } from '@/api/tasks'
 import type { TaskStatus, TaskStatusResponse } from '@/api/types/task'
-
-const HISTORY_KEY = 'craftflow_task_history'
-const MAX_HISTORY = 20
-
-/** 从 localStorage 加载任务历史 */
-function loadHistory(): string[] {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.every((item) => typeof item === 'string')) {
-      return parsed as string[]
-    }
-    return []
-  } catch {
-    return []
-  }
-}
-
-/** 保存任务历史到 localStorage */
-function saveHistory(ids: string[]): void {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(ids))
-}
-
-/** 向历史列表添加 task_id（去重 + 限制数量） */
-function appendToHistory(ids: string[], taskId: string): string[] {
-  const filtered = ids.filter((id) => id !== taskId)
-  const updated = [taskId, ...filtered].slice(0, MAX_HISTORY)
-  saveHistory(updated)
-  return updated
-}
 
 export const useTaskStore = defineStore('task', () => {
   // ─── State ──────────────────────────────────────────────
   const currentTask = ref<TaskStatusResponse | null>(null)
-  const taskHistory = ref<string[]>(loadHistory())
+  const taskList = ref<TaskStatusResponse[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -70,7 +40,6 @@ export const useTaskStore = defineStore('task', () => {
         updated_at: response.updatedAt as string | undefined,
       }
       currentTask.value = statusData
-      taskHistory.value = appendToHistory(taskHistory.value, statusData.task_id)
       return statusData
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '获取任务状态失败'
@@ -78,6 +47,28 @@ export const useTaskStore = defineStore('task', () => {
       throw err
     } finally {
       loading.value = false
+    }
+  }
+
+  /** 获取任务列表（REST，从后端 SQLite + 内存） */
+  async function fetchTaskList(): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      taskList.value = await apiGetTaskList()
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : '获取任务列表失败'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /** 删除任务（REST） */
+  async function deleteTask(taskId: string): Promise<void> {
+    await apiDeleteTask(taskId)
+    taskList.value = taskList.value.filter((t) => t.task_id !== taskId)
+    if (currentTask.value?.task_id === taskId) {
+      currentTask.value = null
     }
   }
 
@@ -145,7 +136,6 @@ export const useTaskStore = defineStore('task', () => {
         created_at: (message.createdAt as string) ?? now,
         updated_at: (message.updatedAt as string) ?? now,
       }
-      taskHistory.value = appendToHistory(taskHistory.value, taskId)
     }
   }
 
@@ -174,7 +164,6 @@ export const useTaskStore = defineStore('task', () => {
         created_at: now,
         updated_at: now,
       }
-      taskHistory.value = appendToHistory(taskHistory.value, taskId)
     }
   }
 
@@ -187,25 +176,12 @@ export const useTaskStore = defineStore('task', () => {
   /** 设置当前任务（用于从外部直接注入状态） */
   function setCurrentTask(task: TaskStatusResponse): void {
     currentTask.value = task
-    taskHistory.value = appendToHistory(taskHistory.value, task.task_id)
-  }
-
-  /** 从历史记录中移除任务 */
-  function removeFromHistory(taskId: string): void {
-    taskHistory.value = taskHistory.value.filter((id) => id !== taskId)
-    saveHistory(taskHistory.value)
-  }
-
-  /** 清空历史记录 */
-  function clearHistory(): void {
-    taskHistory.value = []
-    saveHistory([])
   }
 
   return {
     // state
     currentTask,
-    taskHistory,
+    taskList,
     loading,
     error,
     // getters
@@ -216,12 +192,12 @@ export const useTaskStore = defineStore('task', () => {
     isTerminal,
     // actions
     fetchTaskStatus,
+    fetchTaskList,
+    deleteTask,
     handleTaskUpdate,
     handleTaskResult,
     handleTaskError,
     clearCurrentTask,
     setCurrentTask,
-    removeFromHistory,
-    clearHistory,
   }
 })

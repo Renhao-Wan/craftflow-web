@@ -1,14 +1,31 @@
 /**
- * 任务查询 API（WebSocket 驱动）
+ * 任务查询 API
  *
- * 通过 WebSocket 查询任务状态。
- * REST 端点保留但不再使用。
+ * - 单任务实时状态：WebSocket
+ * - 任务列表/删除：REST HTTP
  */
 
+import client from '@/api/client'
 import { wsClient } from './wsClient'
 import type { WsMessage } from './wsClient'
+import type { TaskStatusResponse } from '@/api/types/task'
 
-/** 查询任务状态（通用，Creation 和 Polishing 共用） */
+/** 查询单个任务状态（WebSocket） */
 export async function getTaskStatus(taskId: string): Promise<WsMessage> {
   return wsClient.sendAndWait('get_task_status', { taskId })
+}
+
+/** 获取任务列表（REST，从后端 SQLite + 内存） */
+export async function getTaskList(
+  limit = 50,
+  offset = 0,
+): Promise<TaskStatusResponse[]> {
+  return client.get('/v1/tasks', {
+    params: { limit, offset },
+  })
+}
+
+/** 删除任务（REST） */
+export async function deleteTask(taskId: string): Promise<void> {
+  await client.delete(`/v1/tasks/${taskId}`)
 }
