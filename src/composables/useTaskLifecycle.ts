@@ -150,6 +150,7 @@ export function useTaskLifecycle(): UseTaskLifecycleReturn {
         task_id: taskId,
         status,
         created_at: response.createdAt as string | undefined,
+        data: { original_content: content, mode },
       })
 
       await handleSubmit(taskId, 'polishing')
