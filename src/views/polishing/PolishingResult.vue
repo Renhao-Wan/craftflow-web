@@ -56,10 +56,9 @@ const isMode3 = computed(() => polishingMode.value === 3)
 /** 从核查报告中提取准确性级别 */
 const accuracyLevel = computed(() => {
   if (!factCheckResult.value) return null
-  const text = factCheckResult.value.toLowerCase()
-  if (text.includes('总体准确性') && text.includes('low')) return 'low'
-  if (text.includes('总体准确性') && text.includes('medium')) return 'medium'
-  if (text.includes('总体准确性') && text.includes('high')) return 'high'
+  // 匹配 "**总体准确性**：high/medium/low" 格式
+  const match = factCheckResult.value.match(/\*\*总体准确性\*\*[：:]\s*(high|medium|low)/i)
+  if (match && match[1]) return match[1].toLowerCase() as 'high' | 'medium' | 'low'
   return null
 })
 
@@ -76,7 +75,7 @@ const accuracyDescription = computed(() => {
 /** 准确性级别对应的说明 */
 const accuracyExplanation = computed(() => {
   switch (accuracyLevel.value) {
-    case 'high': return '文章内容整体准确，未发现明显事实错误，因此直接返回原文。'
+    case 'high': return '文章内容整体准确，未发现明显事实错误，因此直接返回原文。可以根据审查结果手动进行更改和润色。'
     case 'medium': return '文章存在部分事实问题，已进入修正流程进行优化。'
     case 'low': return '文章存在较多事实错误，已强制进入修正流程进行修正。'
     default: return ''
