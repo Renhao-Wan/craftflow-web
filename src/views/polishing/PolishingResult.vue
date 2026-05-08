@@ -31,14 +31,12 @@ const result = computed(() => task.value?.result ?? '')
 const error = computed(() => task.value?.error ?? '未知错误')
 const factCheckResult = computed(() => task.value?.fact_check_result ?? '')
 
-/** 从 data 中解析原始内容 */
 const originalContent = computed(() => {
   const raw = task.value?.data
   if (!raw || typeof raw.original_content !== 'string') return ''
   return raw.original_content
 })
 
-/** 从 data 中解析模式 */
 const polishingMode = computed<PolishingMode | null>(() => {
   const raw = task.value?.data
   if (!raw || typeof raw.mode !== 'number') return null
@@ -50,19 +48,15 @@ const modeLabel = computed(() => {
   return POLISHING_MODE_META[polishingMode.value]?.label ?? ''
 })
 
-/** 是否为模式三（事实核查） */
 const isMode3 = computed(() => polishingMode.value === 3)
 
-/** 从核查报告中提取准确性级别 */
 const accuracyLevel = computed(() => {
   if (!factCheckResult.value) return null
-  // 匹配 "**总体准确性**：high/medium/low" 格式
   const match = factCheckResult.value.match(/\*\*总体准确性\*\*[：:]\s*(high|medium|low)/i)
   if (match && match[1]) return match[1].toLowerCase() as 'high' | 'medium' | 'low'
   return null
 })
 
-/** 准确性级别对应的中文描述 */
 const accuracyDescription = computed(() => {
   switch (accuracyLevel.value) {
     case 'high': return '高准确性'
@@ -72,7 +66,6 @@ const accuracyDescription = computed(() => {
   }
 })
 
-/** 准确性级别对应的说明 */
 const accuracyExplanation = computed(() => {
   switch (accuracyLevel.value) {
     case 'high': return '文章内容整体准确，未发现明显事实错误，因此直接返回原文。可以根据审查结果手动进行更改和润色。'
@@ -82,7 +75,6 @@ const accuracyExplanation = computed(() => {
   }
 })
 
-/** 准确性级别对应的样式类 */
 const accuracyClass = computed(() => {
   switch (accuracyLevel.value) {
     case 'high': return 'accuracy-high'
@@ -118,7 +110,6 @@ onMounted(() => {
   }
 })
 
-// 兜底：任务已完成但 result 为空时，自动重新获取状态
 let fetchedOnce = false
 watch(
   () => ({ status: status.value, result: result.value }),
@@ -221,7 +212,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- 模式三：核查摘要（始终显示） -->
+        <!-- 模式三：核查摘要 -->
         <div v-if="isMode3 && accuracyLevel && viewMode !== 'factCheck'" class="fact-check-summary" :class="accuracyClass">
           <div class="summary-header">
             <span class="summary-icon">{{ accuracyLevel === 'high' ? '✓' : accuracyLevel === 'medium' ? '⚠' : '✗' }}</span>
@@ -276,7 +267,8 @@ onUnmounted(() => {
 .polishing-result-page {
   max-width: 960px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-xl);
 }
 
 /* 顶部栏 */
@@ -284,36 +276,36 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-lg);
 }
 
 .back-btn {
-  padding: 6px 12px;
+  padding: 6px 14px;
   font-size: 14px;
-  color: #374151;
+  color: var(--color-text-secondary);
   background: transparent;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .back-btn:hover {
-  background: #f3f4f6;
+  border-color: var(--color-text-muted);
 }
 
 .topbar-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 .mode-tag {
-  padding: 2px 10px;
+  padding: 3px 12px;
   font-size: 12px;
   font-weight: 500;
-  color: #4338ca;
-  background: #e0e7ff;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
   border-radius: 9999px;
 }
 
@@ -326,39 +318,40 @@ onUnmounted(() => {
 }
 
 .state-title {
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text);
   margin: 0;
 }
 
 .empty-hint {
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--color-text-light);
   text-align: center;
-  padding: 24px;
+  padding: var(--space-lg);
 }
 
 /* running */
 .state-running {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 32px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .running-header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-md);
 }
 
 .running-info {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--color-text-muted);
   margin: 4px 0 0;
 }
 
@@ -366,7 +359,7 @@ onUnmounted(() => {
 .state-completed {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-md);
 }
 
 .result-header {
@@ -384,7 +377,7 @@ onUnmounted(() => {
 .view-toggle {
   display: flex;
   background: #f3f4f6;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 2px;
 }
 
@@ -392,67 +385,68 @@ onUnmounted(() => {
   padding: 5px 14px;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--color-text-muted);
   background: transparent;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .toggle-btn.active {
-  background: #fff;
-  color: #1f2937;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  background: var(--color-bg-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
 }
 
 .copy-btn {
   padding: 6px 16px;
   font-size: 13px;
   font-weight: 500;
-  color: #2563eb;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .copy-btn:hover {
-  background: #dbeafe;
+  background: #eaddd7;
 }
 
 .result-body {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 24px;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  background: var(--color-bg-surface);
 }
 
 /* 对比视图 */
 .compare-view {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--space-md);
 }
 
 .compare-panel {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: #fff;
+  background: var(--color-bg-surface);
 }
 
 .compare-label {
+  font-family: var(--font-display);
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   padding: 12px 20px;
   margin: 0;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: #fafafa;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .compare-body {
@@ -464,7 +458,7 @@ onUnmounted(() => {
 /* fact check summary */
 .fact-check-summary {
   padding: 16px 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   border: 1px solid;
 }
 
@@ -486,7 +480,7 @@ onUnmounted(() => {
 .summary-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
   margin-bottom: 6px;
 }
 
@@ -508,34 +502,36 @@ onUnmounted(() => {
 }
 
 .summary-title {
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--color-text);
 }
 
 .summary-desc {
   font-size: 13px;
-  color: #4b5563;
+  color: var(--color-text-secondary);
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 /* fact check detail */
 .fact-check-detail {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: #fff;
+  background: var(--color-bg-surface);
 }
 
 .detail-title {
+  font-family: var(--font-display);
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-secondary);
   padding: 12px 20px;
   margin: 0;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: #fafafa;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .detail-body {
@@ -548,17 +544,17 @@ onUnmounted(() => {
 .state-failed {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 32px;
+  gap: var(--space-md);
+  padding: var(--space-xl);
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 /* not found hint */
 .not-found-hint {
   text-align: center;
-  color: #6b7280;
+  color: var(--color-text-muted);
 }
 
 .not-found-hint p {
@@ -568,7 +564,7 @@ onUnmounted(() => {
 
 .link-btn {
   font-size: 14px;
-  color: #2563eb;
+  color: var(--color-accent);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -576,14 +572,10 @@ onUnmounted(() => {
 }
 
 .link-btn:hover {
-  text-decoration: underline;
+  opacity: 0.7;
 }
 
-@media (max-width: 640px) {
-  .polishing-result-page {
-    padding: 16px;
-  }
-
+@media (max-width: 768px) {
   .compare-view {
     grid-template-columns: 1fr;
   }
@@ -595,7 +587,7 @@ onUnmounted(() => {
   }
 
   .state-running {
-    padding: 20px;
+    padding: var(--space-lg);
   }
 }
 </style>

@@ -29,7 +29,6 @@ const currentNode = computed(() => task.value?.current_node_label ?? task.value?
 const result = computed(() => task.value?.result ?? '')
 const error = computed(() => task.value?.error ?? '未知错误')
 
-/** 从 data 中解析大纲列表 */
 const outlineItems = computed<OutlineItem[]>(() => {
   const raw = task.value?.data
   if (!raw || !Array.isArray(raw.outline)) return []
@@ -56,7 +55,7 @@ async function onCopy(): Promise<void> {
     copied.value = true
     setTimeout(() => (copied.value = false), 2000)
   } catch {
-    // fallback: select text
+    // fallback
   }
 }
 
@@ -65,14 +64,11 @@ function onBack(): void {
 }
 
 onMounted(() => {
-  // 若 store 中无当前任务或 taskId 不匹配，重新加载
   if (!task.value || task.value.task_id !== props.taskId) {
     loadTask(props.taskId)
   }
 })
 
-// 兜底：任务已完成但 result 为空时，自动重新获取状态
-// 可能原因：WS task_result 消息丢失或未到达
 let fetchedOnce = false
 watch(
   () => ({ status: status.value, result: result.value }),
@@ -99,12 +95,12 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 加载中（首次加载无数据） -->
+    <!-- 加载中 -->
     <div v-if="!task && taskStore.loading" class="state-center">
       <LoadingSpinner :size="32" label="加载任务状态..." />
     </div>
 
-    <!-- 错误（store 级错误） -->
+    <!-- 错误 -->
     <ErrorAlert
       v-else-if="taskStore.error && !task && !isNotFound"
       :message="taskStore.error"
@@ -198,7 +194,8 @@ onUnmounted(() => {
 .task-detail-page {
   max-width: 800px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-xl);
 }
 
 /* 顶部栏 */
@@ -206,28 +203,28 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-lg);
 }
 
 .back-btn {
-  padding: 6px 12px;
+  padding: 6px 14px;
   font-size: 14px;
-  color: #374151;
+  color: var(--color-text-secondary);
   background: transparent;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .back-btn:hover {
-  background: #f3f4f6;
+  border-color: var(--color-text-muted);
 }
 
 .topbar-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 /* 通用状态 */
@@ -239,45 +236,47 @@ onUnmounted(() => {
 }
 
 .state-title {
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text);
   margin: 0;
 }
 
 .state-desc {
   font-size: 14px;
-  color: #6b7280;
-  margin: 8px 0 20px;
+  color: var(--color-text-muted);
+  margin: var(--space-sm) 0 var(--space-lg);
+  line-height: 1.6;
 }
 
 .empty-hint {
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--color-text-light);
   text-align: center;
-  padding: 24px;
+  padding: var(--space-lg);
 }
 
 /* running */
 .state-running {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 32px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .running-header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-md);
 }
 
 .current-node {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--color-text-muted);
   margin: 4px 0 0;
 }
 
@@ -292,7 +291,7 @@ onUnmounted(() => {
 .state-completed {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-md);
 }
 
 .result-header {
@@ -305,40 +304,40 @@ onUnmounted(() => {
   padding: 6px 16px;
   font-size: 13px;
   font-weight: 500;
-  color: #2563eb;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .copy-btn:hover {
-  background: #dbeafe;
+  background: #eaddd7;
 }
 
 .result-body {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 24px;
-  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  background: var(--color-bg-surface);
 }
 
 /* failed */
 .state-failed {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 32px;
+  gap: var(--space-md);
+  padding: var(--space-xl);
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 /* not found hint */
 .not-found-hint {
   text-align: center;
-  color: #6b7280;
+  color: var(--color-text-muted);
 }
 
 .not-found-hint p {
@@ -348,7 +347,7 @@ onUnmounted(() => {
 
 .link-btn {
   font-size: 14px;
-  color: #2563eb;
+  color: var(--color-accent);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -356,16 +355,12 @@ onUnmounted(() => {
 }
 
 .link-btn:hover {
-  text-decoration: underline;
+  opacity: 0.7;
 }
 
-@media (max-width: 640px) {
-  .task-detail-page {
-    padding: 16px;
-  }
-
+@media (max-width: 768px) {
   .state-running {
-    padding: 20px;
+    padding: var(--space-lg);
   }
 }
 </style>

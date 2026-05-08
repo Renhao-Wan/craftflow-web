@@ -60,7 +60,6 @@ function onPageChange(page: number): void {
 async function onRemove(taskId: string): Promise<void> {
   await taskStore.deleteTask(taskId)
   items.value = items.value.filter((item) => item.taskId !== taskId)
-  // 如果当前页已空且不是第一页，回到上一页
   if (items.value.length === 0 && currentPage.value > 1) {
     loadHistory(currentPage.value - 1)
   }
@@ -80,7 +79,10 @@ onMounted(() => loadHistory())
 <template>
   <div class="history-page">
     <div class="page-header">
-      <h1 class="page-title">任务历史</h1>
+      <div class="page-header-left">
+        <h1 class="page-title">任务历史</h1>
+        <span v-if="total > 0" class="page-count">{{ total }} 条记录</span>
+      </div>
       <button
         v-if="items.length > 0"
         class="clear-btn"
@@ -143,7 +145,6 @@ onMounted(() => loadHistory())
 
     <!-- 分页 -->
     <div v-if="totalPages > 1" class="pagination">
-      <span class="page-info">共 {{ total }} 条记录</span>
       <div class="page-controls">
         <button
           class="page-btn"
@@ -169,21 +170,34 @@ onMounted(() => loadHistory())
 .history-page {
   max-width: 720px;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-xl);
 }
 
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-lg);
+}
+
+.page-header-left {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
 }
 
 .page-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #111827;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-text);
   margin: 0;
+}
+
+.page-count {
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
 .clear-btn {
@@ -192,9 +206,9 @@ onMounted(() => loadHistory())
   color: #b91c1c;
   background: transparent;
   border: 1px solid #fecaca;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .clear-btn:hover {
@@ -214,30 +228,30 @@ onMounted(() => loadHistory())
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-md);
   padding: 48px 0;
 }
 
 .empty-text {
   font-size: 15px;
-  color: #9ca3af;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
 .empty-action {
-  padding: 8px 20px;
+  padding: 10px 24px;
   font-size: 14px;
   font-weight: 500;
   color: #fff;
-  background: #2563eb;
+  background: var(--color-accent);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--transition-fast);
 }
 
 .empty-action:hover {
-  background: #1d4ed8;
+  background: var(--color-accent-hover);
 }
 
 /* 列表 */
@@ -247,25 +261,25 @@ onMounted(() => loadHistory())
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .history-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-md);
   padding: 14px 18px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .history-item:hover {
-  border-color: #93c5fd;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
 }
 
 .item-main {
@@ -276,20 +290,20 @@ onMounted(() => loadHistory())
 .item-top {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
   margin-bottom: 6px;
 }
 
 .type-tag {
   font-size: 11px;
   font-weight: 600;
-  padding: 1px 8px;
+  padding: 2px 8px;
   border-radius: 9999px;
 }
 
 .type-creation {
-  color: #2563eb;
-  background: #dbeafe;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 
 .type-polishing {
@@ -299,7 +313,7 @@ onMounted(() => loadHistory())
 
 .item-topic {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -315,22 +329,22 @@ onMounted(() => loadHistory())
 
 .item-time {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--color-text-light);
 }
 
 .remove-btn {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  color: #9ca3af;
+  color: var(--color-text-light);
   background: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition: color var(--transition-fast), background var(--transition-fast);
 }
 
 .remove-btn:hover {
@@ -342,14 +356,9 @@ onMounted(() => loadHistory())
 .pagination {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 20px;
-  padding: 12px 0;
-}
-
-.page-info {
-  font-size: 13px;
-  color: #9ca3af;
+  justify-content: center;
+  margin-top: var(--space-lg);
+  padding: var(--space-md) 0;
 }
 
 .page-controls {
@@ -359,53 +368,43 @@ onMounted(() => loadHistory())
 }
 
 .page-btn {
-  padding: 6px 14px;
+  padding: 6px 16px;
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: all var(--transition-fast);
 }
 
 .page-btn:hover:not(:disabled) {
-  background: #f3f4f6;
-  border-color: #9ca3af;
+  border-color: var(--color-text-muted);
 }
 
 .page-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .page-number {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-muted);
   min-width: 60px;
   text-align: center;
 }
 
-@media (max-width: 640px) {
-  .history-page {
-    padding: 24px 16px;
-  }
-
+@media (max-width: 768px) {
   .history-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--space-sm);
   }
 
   .item-side {
     width: 100%;
     justify-content: space-between;
-  }
-
-  .pagination {
-    flex-direction: column;
-    gap: 12px;
   }
 }
 </style>

@@ -30,15 +30,23 @@ function typeClass(type: string): string {
 <style scoped>
 .toast-container {
   position: fixed;
-  top: 68px;
-  right: 16px;
+  top: var(--space-lg);
+  left: calc(var(--sidebar-width) + var(--space-lg));
+  right: var(--space-lg);
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-sm);
   max-width: 400px;
-  width: 100%;
   pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .toast-container {
+    top: calc(var(--header-height) + var(--space-sm));
+    left: var(--space-md);
+    right: var(--space-md);
+  }
 }
 
 .toast-item {

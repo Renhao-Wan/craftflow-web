@@ -17,7 +17,7 @@ const descLength = computed(() => description.value.length)
 
 const topicError = computed<string | null>(() => {
   const len = topicLength.value
-  if (len === 0) return null // 未提交时不显示
+  if (len === 0) return null
   if (len > TOPIC_MAX) return `主题不能超过 ${TOPIC_MAX} 个字符`
   return null
 })
@@ -111,23 +111,25 @@ function onRetry(): void {
 .task-create-page {
   max-width: 640px;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-xl);
 }
 
 .page-header {
-  margin-bottom: 32px;
+  margin-bottom: var(--space-xl);
 }
 
 .page-title {
+  font-family: var(--font-display);
   font-size: 28px;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 8px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--space-sm);
 }
 
 .page-subtitle {
   font-size: 15px;
-  color: #6b7280;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
@@ -146,7 +148,7 @@ function onRetry(): void {
 .form-label {
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 .required {
@@ -155,7 +157,7 @@ function onRetry(): void {
 
 .optional {
   font-weight: 400;
-  color: #9ca3af;
+  color: var(--color-text-light);
   font-size: 13px;
 }
 
@@ -165,19 +167,19 @@ function onRetry(): void {
   padding: 10px 14px;
   font-size: 15px;
   line-height: 1.5;
-  color: #1f2937;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  color: var(--color-text);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   box-sizing: border-box;
 }
 
 .form-input:focus,
 .form-textarea:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .form-input.input-error {
@@ -210,7 +212,7 @@ function onRetry(): void {
 
 .char-count {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--color-text-light);
   margin-left: auto;
 }
 
@@ -223,21 +225,21 @@ function onRetry(): void {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: var(--space-sm);
+  padding: 12px 28px;
   font-size: 15px;
   font-weight: 600;
   color: #fff;
-  background: #2563eb;
+  background: var(--color-accent);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  transition: background var(--transition-fast), opacity var(--transition-fast);
   align-self: flex-start;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--color-accent-hover);
 }
 
 .submit-btn:disabled {
@@ -245,11 +247,7 @@ function onRetry(): void {
   cursor: not-allowed;
 }
 
-@media (max-width: 640px) {
-  .task-create-page {
-    padding: 24px 16px;
-  }
-
+@media (max-width: 768px) {
   .page-title {
     font-size: 24px;
   }

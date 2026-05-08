@@ -42,15 +42,22 @@ onMounted(loadRecent)
 
 <template>
   <div class="home-page">
+    <!-- Hero -->
     <div class="hero">
       <h1 class="hero-title">CraftFlow</h1>
+      <div class="hero-rule" />
       <p class="hero-subtitle">AI 驱动的智能长文创作与审校平台</p>
     </div>
 
     <!-- 入口卡片 -->
     <div class="action-cards">
       <button class="action-card" @click="router.push({ name: 'creation' })">
-        <div class="action-icon action-icon-creation">&#9998;</div>
+        <div class="action-icon action-icon-creation">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          </svg>
+        </div>
         <div class="action-info">
           <h2 class="action-title">开始创作</h2>
           <p class="action-desc">输入主题，AI 自动生成大纲并撰写长文</p>
@@ -59,7 +66,11 @@ onMounted(loadRecent)
       </button>
 
       <button class="action-card" @click="router.push({ name: 'polishing' })">
-        <div class="action-icon action-icon-polishing">&#9733;</div>
+        <div class="action-icon action-icon-polishing">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z" />
+          </svg>
+        </div>
         <div class="action-info">
           <h2 class="action-title">润色文章</h2>
           <p class="action-desc">粘贴文章，选择模式，AI 为你优化内容</p>
@@ -102,74 +113,84 @@ onMounted(loadRecent)
 .home-page {
   max-width: 640px;
   margin: 0 auto;
-  padding: 48px 16px 32px;
+  padding-top: var(--space-2xl);
+  padding-bottom: var(--space-xl);
 }
 
 /* Hero */
 .hero {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: var(--space-2xl);
 }
 
 .hero-title {
-  font-size: 36px;
-  font-weight: 800;
-  color: #111827;
-  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--color-text);
+  margin: 0 0 12px;
   letter-spacing: -0.02em;
+}
+
+.hero-rule {
+  width: 48px;
+  height: 2px;
+  background: var(--color-accent);
+  margin: 0 auto 16px;
 }
 
 .hero-subtitle {
   font-size: 16px;
-  color: #6b7280;
+  color: var(--color-text-muted);
   margin: 0;
+  letter-spacing: 0.01em;
 }
 
 /* 入口卡片 */
 .action-cards {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 40px;
+  gap: var(--space-md);
+  margin-bottom: var(--space-2xl);
 }
 
 .action-card {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-md);
   padding: 20px 24px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .action-card:hover {
-  border-color: #93c5fd;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-md);
 }
 
 .action-icon {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  font-size: 20px;
+  border-radius: var(--radius-md);
 }
 
 .action-icon-creation {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .action-icon-polishing {
-  background: #ede9fe;
-  color: #7c3aed;
+  background: #f0ead6;
+  color: #92730a;
 }
 
 .action-info {
@@ -178,60 +199,64 @@ onMounted(loadRecent)
 }
 
 .action-title {
-  font-size: 16px;
+  font-family: var(--font-display);
+  font-size: 17px;
   font-weight: 600;
-  color: #111827;
-  margin: 0 0 2px;
+  color: var(--color-text);
+  margin: 0 0 3px;
 }
 
 .action-desc {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
 .action-arrow {
   flex-shrink: 0;
   font-size: 18px;
-  color: #9ca3af;
-  transition: color 0.15s;
+  color: var(--color-text-light);
+  transition: color var(--transition-fast), transform var(--transition-fast);
 }
 
 .action-card:hover .action-arrow {
-  color: #2563eb;
+  color: var(--color-accent);
+  transform: translateX(2px);
 }
 
 /* 最近任务 */
 .recent-section {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 24px;
+  border-top: 1px solid var(--color-rule);
+  padding-top: var(--space-lg);
 }
 
 .recent-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-md);
 }
 
 .recent-title {
+  font-family: var(--font-display);
   font-size: 16px;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text);
   margin: 0;
 }
 
 .view-all-btn {
   font-size: 13px;
-  color: #2563eb;
+  color: var(--color-accent);
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 0;
+  transition: opacity var(--transition-fast);
 }
 
 .view-all-btn:hover {
-  text-decoration: underline;
+  opacity: 0.7;
 }
 
 .recent-list {
@@ -247,29 +272,30 @@ onMounted(loadRecent)
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
-  background: #fff;
-  border: 1px solid #f3f4f6;
-  border-radius: 8px;
+  padding: 12px 16px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .recent-item:hover {
-  border-color: #93c5fd;
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
 }
 
 .type-tag {
   flex-shrink: 0;
   font-size: 11px;
   font-weight: 600;
-  padding: 1px 7px;
+  padding: 2px 8px;
   border-radius: 9999px;
 }
 
 .type-creation {
-  color: #2563eb;
-  background: #dbeafe;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 
 .type-polishing {
@@ -281,7 +307,7 @@ onMounted(loadRecent)
   flex: 1;
   min-width: 0;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -290,20 +316,16 @@ onMounted(loadRecent)
 .recent-time {
   flex-shrink: 0;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--color-text-light);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .home-page {
-    padding: 32px 16px 24px;
+    padding-top: var(--space-lg);
   }
 
   .hero-title {
-    font-size: 28px;
-  }
-
-  .hero-subtitle {
-    font-size: 14px;
+    font-size: 32px;
   }
 
   .action-card {
