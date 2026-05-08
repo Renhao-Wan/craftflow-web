@@ -26,6 +26,8 @@ export interface TaskStatusResponse {
   data?: Record<string, unknown>
   /** 最终结果（仅 completed 状态，Markdown 格式） */
   result?: string
+  /** 事实核查报告（仅 Mode 3 有值） */
+  fact_check_result?: string
   /** 错误信息（仅 failed 状态） */
   error?: string
   /** 任务进度百分比 0-100 */

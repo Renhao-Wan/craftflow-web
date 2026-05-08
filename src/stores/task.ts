@@ -34,6 +34,7 @@ export const useTaskStore = defineStore('task', () => {
         awaiting: response.awaiting as string | undefined,
         data: response.data as Record<string, unknown> | undefined,
         result: response.result as string | undefined,
+        fact_check_result: response.factCheckResult as string | undefined,
         error: response.error as string | undefined,
         progress: response.progress as number | undefined,
         created_at: response.createdAt as string | undefined,
@@ -115,6 +116,8 @@ export const useTaskStore = defineStore('task', () => {
     if (!taskId) return
 
     const result = (message.result as string) ?? ''
+    const factCheckResult = (message.factCheckResult as string) ?? ''
+    const data = message.data as Record<string, unknown> | undefined
     const now = new Date().toISOString()
 
     if (currentTask.value && currentTask.value.task_id === taskId) {
@@ -122,6 +125,8 @@ export const useTaskStore = defineStore('task', () => {
         ...currentTask.value,
         status: 'completed',
         result,
+        fact_check_result: factCheckResult || currentTask.value.fact_check_result,
+        data: data ?? currentTask.value.data,
         progress: 100,
         updated_at: (message.updatedAt as string) ?? now,
       }
@@ -132,6 +137,8 @@ export const useTaskStore = defineStore('task', () => {
         task_id: taskId,
         status: 'completed',
         result,
+        fact_check_result: factCheckResult,
+        data,
         progress: 100,
         created_at: (message.createdAt as string) ?? now,
         updated_at: (message.updatedAt as string) ?? now,

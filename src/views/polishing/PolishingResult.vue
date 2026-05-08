@@ -19,6 +19,7 @@ const { loadTask, stop } = useTaskLifecycle()
 
 const copied = ref(false)
 const viewMode = ref<'result' | 'compare'>('result')
+const showFactCheck = ref(false)
 
 const task = computed(() => taskStore.currentTask)
 const isNotFound = computed(
@@ -29,6 +30,7 @@ const progress = computed(() => task.value?.progress ?? 0)
 const currentNode = computed(() => task.value?.current_node_label ?? task.value?.current_node ?? '')
 const result = computed(() => task.value?.result ?? '')
 const error = computed(() => task.value?.error ?? '未知错误')
+const factCheckResult = computed(() => task.value?.fact_check_result ?? '')
 
 /** 从 data 中解析原始内容 */
 const originalContent = computed(() => {
@@ -47,6 +49,49 @@ const polishingMode = computed<PolishingMode | null>(() => {
 const modeLabel = computed(() => {
   if (!polishingMode.value) return ''
   return POLISHING_MODE_META[polishingMode.value]?.label ?? ''
+})
+
+/** 是否为模式三（事实核查） */
+const isMode3 = computed(() => polishingMode.value === 3)
+
+/** 从核查报告中提取准确性级别 */
+const accuracyLevel = computed(() => {
+  if (!factCheckResult.value) return null
+  const text = factCheckResult.value.toLowerCase()
+  if (text.includes('总体准确性') && text.includes('low')) return 'low'
+  if (text.includes('总体准确性') && text.includes('medium')) return 'medium'
+  if (text.includes('总体准确性') && text.includes('high')) return 'high'
+  return null
+})
+
+/** 准确性级别对应的中文描述 */
+const accuracyDescription = computed(() => {
+  switch (accuracyLevel.value) {
+    case 'high': return '高准确性'
+    case 'medium': return '中等准确性'
+    case 'low': return '低准确性'
+    default: return ''
+  }
+})
+
+/** 准确性级别对应的说明 */
+const accuracyExplanation = computed(() => {
+  switch (accuracyLevel.value) {
+    case 'high': return '文章内容整体准确，未发现明显事实错误，因此直接返回原文。'
+    case 'medium': return '文章存在部分事实问题，已进入修正流程进行优化。'
+    case 'low': return '文章存在较多事实错误，已强制进入修正流程进行修正。'
+    default: return ''
+  }
+})
+
+/** 准确性级别对应的样式类 */
+const accuracyClass = computed(() => {
+  switch (accuracyLevel.value) {
+    case 'high': return 'accuracy-high'
+    case 'medium': return 'accuracy-medium'
+    case 'low': return 'accuracy-low'
+    default: return ''
+  }
 })
 
 async function onRetry(): Promise<void> {
@@ -163,10 +208,35 @@ onUnmounted(() => {
               >
                 对比
               </button>
+              <button
+                v-if="isMode3 && factCheckResult"
+                class="toggle-btn"
+                :class="{ active: showFactCheck }"
+                @click="showFactCheck = !showFactCheck"
+              >
+                核查报告
+              </button>
             </div>
             <button class="copy-btn" @click="onCopy">
               {{ copied ? '已复制' : '复制全文' }}
             </button>
+          </div>
+        </div>
+
+        <!-- 模式三：核查摘要 -->
+        <div v-if="isMode3 && accuracyLevel" class="fact-check-summary" :class="accuracyClass">
+          <div class="summary-header">
+            <span class="summary-icon">{{ accuracyLevel === 'high' ? '✓' : accuracyLevel === 'medium' ? '⚠' : '✗' }}</span>
+            <span class="summary-title">{{ accuracyDescription }}</span>
+          </div>
+          <p class="summary-desc">{{ accuracyExplanation }}</p>
+        </div>
+
+        <!-- 核查报告详情 -->
+        <div v-if="showFactCheck && factCheckResult" class="fact-check-detail">
+          <h3 class="detail-title">事实核查报告</h3>
+          <div class="detail-body">
+            <MarkdownRenderer :content="factCheckResult" />
           </div>
         </div>
 
@@ -390,6 +460,89 @@ onUnmounted(() => {
 .compare-body {
   padding: 20px;
   max-height: 600px;
+  overflow-y: auto;
+}
+
+/* fact check summary */
+.fact-check-summary {
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+
+.accuracy-high {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.accuracy-medium {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.accuracy-low {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.summary-icon {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.accuracy-high .summary-icon {
+  color: #16a34a;
+}
+
+.accuracy-medium .summary-icon {
+  color: #d97706;
+}
+
+.accuracy-low .summary-icon {
+  color: #dc2626;
+}
+
+.summary-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.summary-desc {
+  font-size: 13px;
+  color: #4b5563;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* fact check detail */
+.fact-check-detail {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.detail-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  padding: 12px 20px;
+  margin: 0;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-body {
+  padding: 20px;
+  max-height: 400px;
   overflow-y: auto;
 }
 
