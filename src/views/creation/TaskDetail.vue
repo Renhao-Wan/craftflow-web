@@ -61,7 +61,7 @@ async function onCopy(): Promise<void> {
 }
 
 function onBack(): void {
-  router.push({ name: 'creation' })
+  router.back()
 }
 
 onMounted(() => {
