@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
 import TaskStatusBadge from '@/components/common/TaskStatusBadge.vue'
@@ -23,11 +23,15 @@ const items = ref<HistoryItem[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-async function loadHistory(): Promise<void> {
+const currentPage = computed(() => taskStore.currentPage)
+const totalPages = computed(() => taskStore.totalPages)
+const total = computed(() => taskStore.taskTotal)
+
+async function loadHistory(page = 1): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    await taskStore.fetchTaskList()
+    await taskStore.fetchTaskList(page)
     items.value = taskStore.taskList.map((t) => {
       const type = inferTaskType(t)
       return {
@@ -49,9 +53,17 @@ function goToDetail(item: HistoryItem): void {
   router.push({ name: taskRouteName(item.type), params: { taskId: item.taskId } })
 }
 
+function onPageChange(page: number): void {
+  loadHistory(page)
+}
+
 async function onRemove(taskId: string): Promise<void> {
   await taskStore.deleteTask(taskId)
   items.value = items.value.filter((item) => item.taskId !== taskId)
+  // 如果当前页已空且不是第一页，回到上一页
+  if (items.value.length === 0 && currentPage.value > 1) {
+    loadHistory(currentPage.value - 1)
+  }
 }
 
 async function onClearAll(): Promise<void> {
@@ -59,9 +71,10 @@ async function onClearAll(): Promise<void> {
     await taskStore.deleteTask(item.taskId)
   }
   items.value = []
+  loadHistory(1)
 }
 
-onMounted(loadHistory)
+onMounted(() => loadHistory())
 </script>
 
 <template>
@@ -127,6 +140,28 @@ onMounted(loadHistory)
         </div>
       </li>
     </ul>
+
+    <!-- 分页 -->
+    <div v-if="totalPages > 1" class="pagination">
+      <span class="page-info">共 {{ total }} 条记录</span>
+      <div class="page-controls">
+        <button
+          class="page-btn"
+          :disabled="currentPage <= 1"
+          @click="onPageChange(currentPage - 1)"
+        >
+          上一页
+        </button>
+        <span class="page-number">{{ currentPage }} / {{ totalPages }}</span>
+        <button
+          class="page-btn"
+          :disabled="currentPage >= totalPages"
+          @click="onPageChange(currentPage + 1)"
+        >
+          下一页
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -303,6 +338,55 @@ onMounted(loadHistory)
   background: #fef2f2;
 }
 
+/* 分页 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 12px 0;
+}
+
+.page-info {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.page-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-number {
+  font-size: 13px;
+  color: #6b7280;
+  min-width: 60px;
+  text-align: center;
+}
+
 @media (max-width: 640px) {
   .history-page {
     padding: 24px 16px;
@@ -317,6 +401,11 @@ onMounted(loadHistory)
   .item-side {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 12px;
   }
 }
 </style>

@@ -8,6 +8,9 @@ export const useTaskStore = defineStore('task', () => {
   // ─── State ──────────────────────────────────────────────
   const currentTask = ref<TaskStatusResponse | null>(null)
   const taskList = ref<TaskStatusResponse[]>([])
+  const taskTotal = ref(0)
+  const currentPage = ref(1)
+  const pageSize = ref(20)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -52,17 +55,26 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   /** 获取任务列表（REST，从后端 SQLite + 内存） */
-  async function fetchTaskList(): Promise<void> {
+  async function fetchTaskList(page?: number): Promise<void> {
     loading.value = true
     error.value = null
+    if (page !== undefined) {
+      currentPage.value = page
+    }
+    const offset = (currentPage.value - 1) * pageSize.value
     try {
-      taskList.value = await apiGetTaskList()
+      const response = await apiGetTaskList(pageSize.value, offset)
+      taskList.value = response.items
+      taskTotal.value = response.total
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : '获取任务列表失败'
     } finally {
       loading.value = false
     }
   }
+
+  /** 总页数 */
+  const totalPages = computed(() => Math.ceil(taskTotal.value / pageSize.value))
 
   /** 删除任务（REST） */
   async function deleteTask(taskId: string): Promise<void> {
@@ -189,6 +201,9 @@ export const useTaskStore = defineStore('task', () => {
     // state
     currentTask,
     taskList,
+    taskTotal,
+    currentPage,
+    pageSize,
     loading,
     error,
     // getters
@@ -197,6 +212,7 @@ export const useTaskStore = defineStore('task', () => {
     isCompleted,
     isFailed,
     isTerminal,
+    totalPages,
     // actions
     fetchTaskStatus,
     fetchTaskList,
