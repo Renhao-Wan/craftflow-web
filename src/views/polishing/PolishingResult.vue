@@ -18,8 +18,7 @@ const taskStore = useTaskStore()
 const { loadTask, stop } = useTaskLifecycle()
 
 const copied = ref(false)
-const viewMode = ref<'result' | 'compare'>('result')
-const showFactCheck = ref(false)
+const viewMode = ref<'result' | 'compare' | 'factCheck'>('result')
 
 const task = computed(() => taskStore.currentTask)
 const isNotFound = computed(
@@ -211,8 +210,8 @@ onUnmounted(() => {
               <button
                 v-if="isMode3 && factCheckResult"
                 class="toggle-btn"
-                :class="{ active: showFactCheck }"
-                @click="showFactCheck = !showFactCheck"
+                :class="{ active: viewMode === 'factCheck' }"
+                @click="viewMode = 'factCheck'"
               >
                 核查报告
               </button>
@@ -223,21 +222,13 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- 模式三：核查摘要 -->
-        <div v-if="isMode3 && accuracyLevel" class="fact-check-summary" :class="accuracyClass">
+        <!-- 模式三：核查摘要（始终显示） -->
+        <div v-if="isMode3 && accuracyLevel && viewMode !== 'factCheck'" class="fact-check-summary" :class="accuracyClass">
           <div class="summary-header">
             <span class="summary-icon">{{ accuracyLevel === 'high' ? '✓' : accuracyLevel === 'medium' ? '⚠' : '✗' }}</span>
             <span class="summary-title">{{ accuracyDescription }}</span>
           </div>
           <p class="summary-desc">{{ accuracyExplanation }}</p>
-        </div>
-
-        <!-- 核查报告详情 -->
-        <div v-if="showFactCheck && factCheckResult" class="fact-check-detail">
-          <h3 class="detail-title">事实核查报告</h3>
-          <div class="detail-body">
-            <MarkdownRenderer :content="factCheckResult" />
-          </div>
         </div>
 
         <!-- 单栏结果 -->
@@ -247,7 +238,7 @@ onUnmounted(() => {
         </div>
 
         <!-- 双栏对比 -->
-        <div v-else class="compare-view">
+        <div v-else-if="viewMode === 'compare'" class="compare-view">
           <div class="compare-panel">
             <h3 class="compare-label">原文</h3>
             <div class="compare-body">
@@ -261,6 +252,14 @@ onUnmounted(() => {
               <MarkdownRenderer v-if="result" :content="result" />
               <p v-else class="empty-hint">暂无润色结果</p>
             </div>
+          </div>
+        </div>
+
+        <!-- 核查报告详情 -->
+        <div v-else-if="viewMode === 'factCheck' && factCheckResult" class="fact-check-detail">
+          <h3 class="detail-title">事实核查报告</h3>
+          <div class="detail-body">
+            <MarkdownRenderer :content="factCheckResult" />
           </div>
         </div>
       </div>
