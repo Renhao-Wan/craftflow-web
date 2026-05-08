@@ -2,16 +2,31 @@
 export type PolishingMode = 1 | 2 | 3
 
 /** 润色模式元信息 */
-export const POLISHING_MODE_META: Record<PolishingMode, { label: string; description: string }> = {
-  1: { label: '极速格式化', description: '单次格式整理，速度最快' },
-  2: { label: '专家对抗审查', description: 'Author-Editor 多轮对抗，质量与速度平衡' },
-  3: { label: '事实核查', description: '准确性验证 + 对抗循环，质量最高' },
+export const POLISHING_MODE_META: Record<
+  PolishingMode,
+  { label: string; description: string; extra?: string }
+> = {
+  1: {
+    label: '快速排版',
+    description: '自动修正格式、统一标题层级、优化排版，让文章整洁易读',
+    extra: '约 15 秒',
+  },
+  2: {
+    label: '深度润色',
+    description: '优化语言表达、加强逻辑衔接、补充细节，全面提升文章质量',
+    extra: '约 30 秒 · 推荐',
+  },
+  3: {
+    label: '事实核查',
+    description: '核查文章中的数据、引用、时间等事实性内容，标注问题并给出修正建议',
+    extra: '约 10 秒',
+  },
 }
 
 /** 润色任务请求 — POST /api/v1/polishing */
 export interface PolishingRequest {
   /** 待润色的文章内容（Markdown 格式），>=10 字符 */
   content: string
-  /** 润色模式：1=极速格式化, 2=专家对抗审查, 3=事实核查 */
+  /** 润色模式：1=快速排版, 2=深度润色, 3=事实核查 */
   mode: PolishingMode
 }

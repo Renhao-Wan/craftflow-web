@@ -89,7 +89,10 @@ function onRetry(): void {
           >
             <div class="mode-badge">{{ mode }}</div>
             <div class="mode-info">
-              <p class="mode-label">{{ meta.label }}</p>
+              <div class="mode-header">
+                <p class="mode-label">{{ meta.label }}</p>
+                <span v-if="meta.extra" class="mode-extra">{{ meta.extra }}</span>
+              </div>
               <p class="mode-desc">{{ meta.description }}</p>
             </div>
           </button>
@@ -275,11 +278,27 @@ function onRetry(): void {
   min-width: 0;
 }
 
+.mode-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
 .mode-label {
   font-size: 15px;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 2px;
+  margin: 0;
+}
+
+.mode-extra {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 1px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
 }
 
 .mode-desc {
