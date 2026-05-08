@@ -6,6 +6,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',  // Electron 需要相对路径加载资源
   plugins: [
     vue(),
     vueDevTools(),
